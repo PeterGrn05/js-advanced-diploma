@@ -1,15 +1,13 @@
-import GamePlay from "./GamePlay";
-import Bowman from "./characters/Bowman";
 import themes from "./themes";
 import PositionedCharacter from "./PositionedCharacter";
-import Team from "./Team";
 import { generateTeam } from "./generators";
 import Pose from "./Pose";
+
 export default class GameController {
   constructor(gamePlay, stateService) {
     this.gamePlay = gamePlay;
     this.stateService = stateService;
-
+    this.characters = [];
   }
 
   init() {
@@ -18,40 +16,26 @@ export default class GameController {
     this.playerTeam = this.generatePlayerTeam();
     this.enemyTeam = this.generateenemyTeam();
 
-    let positionedList = [];
     let indexesList = [];
 
     this.playerTeam.characters.forEach(element => {
-      let playerPositions = Pose.playerPosition(8);
-      let index = this.generateRandom(playerPositions);
-
-      if (!indexesList.includes(index)) {
-        indexesList.push(index);
-        positionedList.push(new PositionedCharacter(element, playerPositions[index]));
-      } else {
-        index = this.generateRandom(playerPositions);
-        indexesList.push(index);
-        positionedList.push(new PositionedCharacter(element, playerPositions[index]));
-      }
+      this.renderTeam(Pose.playerPosition(8), element, indexesList);
     });
 
     this.enemyTeam.characters.forEach(element => {
-      let enemyPositions = Pose.enemyPosition(8);
-      let index = this.generateRandom(enemyPositions);
-
-      if (!indexesList.includes(index)) {
-        indexesList.push(index);
-        positionedList.push(new PositionedCharacter(element, enemyPositions[index]));
-      } else {
-        index = this.generateRandom(enemyPositions);
-        indexesList.push(index);
-        positionedList.push(new PositionedCharacter(element, enemyPositions[index]));
-      }
+      this.renderTeam(Pose.enemyPosition(8), element, indexesList);
     });
 
-    this.gamePlay.redrawPositions(positionedList);
-    // TODO: add event listeners to gamePlay events
-    // TODO: load saved stated from stateService
+    this.gamePlay.redrawPositions(this.characters);
+
+    // Подписки на события
+    this.gamePlay.addCellEnterListener(this.onCellEnter.bind(this));
+    this.gamePlay.addCellLeaveListener(this.onCellLeave.bind(this));
+    this.gamePlay.addCellClickListener(this.onCellClick.bind(this));
+  }
+
+  getCharacterInfo(character) {
+    return `🎖${character.level} ⚔${character.attack} 🛡${character.defence} ❤${character.health}`;
   }
 
   onCellClick(index) {
@@ -59,11 +43,15 @@ export default class GameController {
   }
 
   onCellEnter(index) {
-    // TODO: react to mouse enter
+    const character = this.characters.find(ch => ch.position === index);
+    if (character) {
+      const message = this.getCharacterInfo(character.character);
+      this.gamePlay.showCellTooltip(message, index);
+    }
   }
 
   onCellLeave(index) {
-    // TODO: react to mouse leave
+    this.gamePlay.hideCellTooltip(index);
   }
 
   generatePlayerTeam() {
@@ -78,5 +66,17 @@ export default class GameController {
 
   generateRandom(array) {
     return Math.floor(Math.random() * array.length);
+  }
+  
+ renderTeam(positions, element, indexesList) {
+      let index = this.generateRandom(positions);
+      if (!indexesList.includes(positions[index])) {
+        indexesList.push(positions[index]);
+        this.characters.push(new PositionedCharacter(element, positions[index]));
+      } else {
+        index = this.generateRandom(positions);
+        indexesList.push(positions[index]);
+        this.characters.push(new PositionedCharacter(element, positions[index]));
+      }
   }
 }
