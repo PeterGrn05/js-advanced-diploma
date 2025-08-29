@@ -2,6 +2,8 @@ import themes from "./themes";
 import PositionedCharacter from "./PositionedCharacter";
 import { generateTeam } from "./generators";
 import Pose from "./Pose";
+import GameState from "./GameState";
+import GameStateService from "./GameStateService";
 
 export default class GameController {
   constructor(gamePlay, stateService) {
@@ -17,6 +19,10 @@ export default class GameController {
     this.enemyTeam = this.generateenemyTeam();
 
     let indexesList = [];
+
+    this.gamePlay.addNewGameListener(() => this.onNewGameClick());
+    this.gamePlay.addSaveGameListener(() => this.onSaveGameClick());
+    this.gamePlay.addLoadGameListener(() => this.onLoadGameClick());
 
     this.playerTeam.characters.forEach(element => {
       this.renderTeam(Pose.playerPosition(8), element, indexesList);
@@ -68,7 +74,7 @@ export default class GameController {
     return Math.floor(Math.random() * array.length);
   }
   
- renderTeam(positions, element, indexesList) {
+  renderTeam(positions, element, indexesList) {
       let index = this.generateRandom(positions);
       if (!indexesList.includes(positions[index])) {
         indexesList.push(positions[index]);
@@ -78,5 +84,31 @@ export default class GameController {
         indexesList.push(positions[index]);
         this.characters.push(new PositionedCharacter(element, positions[index]));
       }
+  }
+
+
+  onNewGameClick() {
+    this.level = 1;
+    this.characters = [];
+    this.init();
+  }
+
+  onSaveGameClick() {
+    GameState.from(this);
+  }
+
+  onLoadGameClick() {
+    if (localStorage.state) {
+      this.characters.forEach((char) => {
+        this.gamePlay.deselectCell(char.position);
+      })
+      this.gamePlay.setCursor('default');
+      let gameStateService = new GameStateService(localStorage);
+      let gameState = gameStateService.load();
+      this.characters = gameState.characters;
+      this.level = gameState.level;
+      this.status = gameState.status;
+      this.gamePlay.redrawPositions(this.characters);
+    }
   }
 }
