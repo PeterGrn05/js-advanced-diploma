@@ -5,13 +5,13 @@
   "description": "Проект по созданию игры",
   "main": "src/index.js",
   "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist",
     "build": "webpack --mode production",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "jest",
-    "serve": "webpack serve --mode development",
-    "predeploy": "npm run build",
-    "deploy":"gh-pages -d build"
+    "serve": "webpack serve --mode development"
   },
   "author": "Peter Gorin",
   "license": "MIT",
